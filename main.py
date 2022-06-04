@@ -2,6 +2,16 @@
 import pygame
 import math
 
+SUN_IMG = pygame.image.load('planet-images/sun.jpg')
+MERCURY_IMG = pygame.image.load('planet-images/mercury.png')
+VENUS_ING = pygame.image.load('planet-images/venus.png')
+EARTH_IMG = pygame.image.load('planet-images/earth.png')
+MARS_IMG = pygame.image.load('planet-images/mars.png')
+JUPITER_IMG = pygame.image.load('planet-images/jupiter.png')
+SATURN_IMG = pygame.image.load('planet-images/saturn.jpg')
+URANUS_IMG = pygame.image.load('planet-images/uranus.png')
+NEPTUNE_IMG = pygame.image.load('planet-images/neptune.png')
+
 '''
 Astronomical Measures used in calculations are:
 AU - Astronomical Unit
@@ -42,11 +52,33 @@ Y_VEL_SATURN = 9.68 * 1000
 Y_VEL_URANUS = 6.80 * 1000
 Y_VEL_NEPTUNE = 5.43 * 1000
 
+# MEAN RADIAL CONSTANTS FOR PLANETS
+SUN_RADIUS = 695700 * 1000
+MERCURY_RADIUS = 2439.7 * 1000
+VENUS_RADIUS = 6051.8 * 1000
+EARTH_RADIUS = 6371 * 1000
+MARS_RADIUS = 3389.5 * 1000
+JUPITER_RADIUS = 69911 * 1000
+SATURN_RADIUS = 58232 * 1000
+URANUS_RADIUS = 25362 * 1000
+NEPTUNE_RADIUS = 24622 * 1000
+
+# ORBITAL DISTANCE OF PLANETS
+OD_SUN = 0
+OD_MERCURY = 0.387
+OD_VENUS = 0.723
+OD_EARTH = 1
+OD_MARS = 1.542
+OD_JUPITER = 5.204
+OD_SATURN = 9.582
+OD_URANUS = 19.23
+OD_NEPTUNE = 30.10
+
 # initialize pygame window
 pygame.init()
 
 # pygame window attributes
-WIDTH, HEIGHT = 800, 800
+WIDTH, HEIGHT = 1200, 800
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Basic Planet Simulation")
 
@@ -57,11 +89,11 @@ class Planet:
     G = 6.67428e-11
 
     # required to down size astronomical parameters to our requirements
-    SCALE = 250 / AU        # 1 AU = 100 pixels
+    SCALE = 150 / AU        # 1 AU = 100 pixels
 
     TIMESTEP = 3600 * 24    # 1 day is simulated per fps
 
-    def __init__(self, x, y, radius, color, mass):
+    def __init__(self, x, y, radius, color, mass, img, img_size):
         # x and y represents x-intercept and y-intercept distance of a planet from the sun
         self.x = x
         self.y = y
@@ -70,6 +102,11 @@ class Planet:
         self.radius = radius
         self.color = color
         self.mass = mass
+
+        self.img = img
+        
+        # img properties
+        self.img_size = img_size
 
         # orbit list will be needed to record the co-ordinates of orbit a planet travels along
         self.orbit = []
@@ -97,13 +134,14 @@ class Planet:
                 y = y * self.SCALE + HEIGHT / 2
                 updated_points.append((x, y))
 
-            pygame.draw.lines(win, self.color, False, updated_points, 2)
+            pygame.draw.lines(win, WHITE, False, updated_points, 1)
 
-        pygame.draw.circle(win, self.color, (x, y), self.radius)
-        
-        if not self.sun:
-            distance_text = FONT.render(f"{round(self.distance_to_sun/1000, 2)}km", 1, WHITE)
-            win.blit(distance_text, (x-distance_text.get_width()/2, y-distance_text.get_height()/2))
+        win.blit(pygame.transform.scale(self.img, self.img_size), (x - self.img_size[0]/2, y - self.img_size[1]/2))
+        # pygame.draw.circle(win, self.color, (x, y), self.radius)
+
+        # if not self.sun:
+        #     distance_text = FONT.render(f"{round(self.distance_to_sun/1000, 2)}km", 1, WHITE)
+        #     win.blit(distance_text, (x-distance_text.get_width()/2, y-distance_text.get_height()/2))
 
     def attraction(self, other):
         other_x, other_y = other.x, other.y
@@ -142,42 +180,42 @@ class Planet:
 # Create Planets
 def getPlanets():
     # SUN
-    sun = Planet(0, 0, 30, VERMILLION, SUN_MASS)
+    sun = Planet(OD_SUN * Planet.AU, 0, 30, VERMILLION, SUN_MASS, SUN_IMG, (40, 40))
     sun.sun = True
 
     # MERCURY
-    mercury = Planet(0.387 * Planet.AU, 0, 8, GREY, MERCURY_MASS)
+    mercury = Planet(OD_MERCURY * Planet.AU, 0, 8, GREY, MERCURY_MASS, MERCURY_IMG, (20, 20))
     mercury.y_vel = -Y_VEL_MERCURY
 
     # VENUS
-    venus = Planet(0.723 * Planet.AU, 0, 14, YELLOWISH_WHITE, VENUS_MASS)
+    venus = Planet(OD_VENUS * Planet.AU, 0, 14, YELLOWISH_WHITE, VENUS_MASS, VENUS_ING, (20, 20))
     venus.y_vel = -Y_VEL_VENUS
 
     # EARTH
-    earth = Planet(-1 * Planet.AU, 0, 16, BLUE, EARTH_MASS)
+    earth = Planet(-OD_EARTH * Planet.AU, 0, 16, BLUE, EARTH_MASS, EARTH_IMG, (20, 20))
     earth.y_vel = Y_VEL_EARTH
 
     # MARS
-    mars = Planet(-1.542 * Planet.AU, 0, 12, RED, MARS_MASS)
+    mars = Planet(-OD_MARS * Planet.AU, 0, 12, RED, MARS_MASS, MARS_IMG, (20, 20))
     mars.y_vel = Y_VEL_MARS
 
-    # # JUPITER
-    # jupiter = Planet(-1 * Planet.AU, 0, 16, OFF_WHITE, JUPITER_MASS)
-    # jupiter.y_vel = Y_VEL_JUPITER
+    # JUPITER
+    jupiter = Planet(OD_JUPITER * Planet.AU, 0, 16, OFF_WHITE, JUPITER_MASS, JUPITER_IMG, (20, 20))
+    jupiter.y_vel = Y_VEL_JUPITER
 
-    # # SATURN
-    # saturn = Planet(-1 * Planet.AU, 0, 16, SIENNA, SATURN_MASS)
-    # saturn.y_vel = Y_VEL_SATURN
+    # SATURN
+    saturn = Planet(OD_SATURN * Planet.AU, 0, 16, SIENNA, SATURN_MASS, SATURN_IMG, (20, 20))
+    saturn.y_vel = Y_VEL_SATURN
 
-    # # URANUS
-    # uranus = Planet(-1 * Planet.AU, 0, 16, PEARL_BLUE, URANUS_MASS)
-    # uranus.y_vel = Y_VEL_URANUS
+    # URANUS
+    uranus = Planet(-OD_URANUS * Planet.AU, 0, 16, PEARL_BLUE, URANUS_MASS, URANUS_IMG, (20, 20))
+    uranus.y_vel = Y_VEL_URANUS
 
-    # # NEPTUNE
-    # neptune = Planet(-1 * Planet.AU, 0, 16, COBALT_BLUE, NEPTUNE_MASS)
-    # neptune.y_vel = Y_VEL_NEPTUNE
+    # NEPTUNE
+    neptune = Planet(-OD_NEPTUNE * Planet.AU, 0, 16, COBALT_BLUE, NEPTUNE_MASS, NEPTUNE_IMG, (20, 20))
+    neptune.y_vel = Y_VEL_NEPTUNE
 
-    return [sun, mercury, venus, earth, mars]
+    return [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
 
 # Main Program
 def main():
