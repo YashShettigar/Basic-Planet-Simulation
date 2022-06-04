@@ -2,6 +2,7 @@
 import pygame
 import math
 
+# load planet images
 SUN_IMG = pygame.image.load('planet-images/sun.jpg')
 MERCURY_IMG = pygame.image.load('planet-images/mercury.png')
 VENUS_ING = pygame.image.load('planet-images/venus.png')
@@ -11,12 +12,6 @@ JUPITER_IMG = pygame.image.load('planet-images/jupiter.png')
 SATURN_IMG = pygame.image.load('planet-images/saturn.jpg')
 URANUS_IMG = pygame.image.load('planet-images/uranus.png')
 NEPTUNE_IMG = pygame.image.load('planet-images/neptune.png')
-
-'''
-Astronomical Measures used in calculations are:
-AU - Astronomical Unit
-G - Gravitational Constant
-'''
 
 #  COLOR CONSTANTS
 OFF_WHITE = (237,231,218)
@@ -42,7 +37,7 @@ SATURN_MASS = 5.685 * 10**26
 URANUS_MASS = 8.682 * 10**25
 NEPTUNE_MASS = 1.024 * 10**26
 
-# VELOCITY CONSTANTS FOR PLANETS
+# VELOCITY CONSTANTS OF PLANETS
 Y_VEL_MERCURY = 47.36 * 1000
 Y_VEL_VENUS = 35.02 * 1000
 Y_VEL_EARTH = 29.78 * 1000
@@ -52,7 +47,7 @@ Y_VEL_SATURN = 9.68 * 1000
 Y_VEL_URANUS = 6.80 * 1000
 Y_VEL_NEPTUNE = 5.43 * 1000
 
-# MEAN RADIAL CONSTANTS FOR PLANETS
+# MEAN VOLUMETRIC RADIAL CONSTANTS OF PLANETS
 SUN_RADIUS = 695700 * 1000
 MERCURY_RADIUS = 2439.7 * 1000
 VENUS_RADIUS = 6051.8 * 1000
@@ -82,18 +77,21 @@ WIDTH, HEIGHT = 1200, 800
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Basic Planet Simulation")
 
-FONT = pygame.font.SysFont("comicsans", 14)
+FONT = pygame.font.SysFont("timesnewroman", 30, True)
+
+'''
+Astronomical Measures used in calculations are:
+AU - Astronomical Unit
+G - Gravitational Constant
+'''
+
+AU = 149.6e6 * 1000
+G = 6.67428e-11
+
+TIMESTEP = 3600 * 24    # 1 day is simulated per fps
 
 class Planet:
-    AU = 149.6e6 * 1000
-    G = 6.67428e-11
-
-    # required to down size astronomical parameters to our requirements
-    SCALE = 150 / AU        # 1 AU = 100 pixels
-
-    TIMESTEP = 3600 * 24    # 1 day is simulated per fps
-
-    def __init__(self, x, y, radius, color, mass, img, img_size):
+    def __init__(self, x, y, radius, color, mass, img, img_size,):
         # x and y represents x-intercept and y-intercept distance of a planet from the sun
         self.x = x
         self.y = y
@@ -121,17 +119,17 @@ class Planet:
         self.x_vel = 0
         self.y_vel = 0
 
-    def draw(self, win):
-        x = self.x * self.SCALE + WIDTH / 2 
-        y = self.y * self.SCALE + HEIGHT / 2
+    def draw(self, win, scale):
+        x = self.x * scale + WIDTH / 2 
+        y = self.y * scale + HEIGHT / 2
 
 
         if len(self.orbit) > 2:
             updated_points = []
             for point in self.orbit:
                 x, y = point
-                x = x * self.SCALE + WIDTH / 2
-                y = y * self.SCALE + HEIGHT / 2
+                x = x * scale + WIDTH / 2
+                y = y * scale + HEIGHT / 2
                 updated_points.append((x, y))
 
             pygame.draw.lines(win, WHITE, False, updated_points, 1)
@@ -152,7 +150,7 @@ class Planet:
         if other.sun:
             self.distance_to_sun = distance
 
-        force = self.G * self.mass * other.mass / distance**2
+        force = G * self.mass * other.mass / distance**2
         theta = math.atan2(distance_y, distance_x)
         force_x = math.cos(theta) * force
         force_y = math.sin(theta) * force
@@ -162,6 +160,7 @@ class Planet:
     def update_position(self, planets):
         total_fx = total_fy = 0
         for planet in planets:
+            # to avoid zero division error
             if self == planet:
                 continue
 
@@ -169,78 +168,139 @@ class Planet:
             total_fx += fx
             total_fy += fy
 
-        self.x_vel += total_fx / self.mass * self.TIMESTEP
-        self.y_vel += total_fy / self.mass * self.TIMESTEP
+        self.x_vel += total_fx / self.mass * TIMESTEP
+        self.y_vel += total_fy / self.mass * TIMESTEP
 
-        self.x += self.x_vel * self.TIMESTEP
-        self.y += self.y_vel * self.TIMESTEP
+        self.x += self.x_vel * TIMESTEP
+        self.y += self.y_vel * TIMESTEP
         self.orbit.append((self.x, self.y))
 
 
 # Create Planets
 def getPlanets():
     # SUN
-    sun = Planet(OD_SUN * Planet.AU, 0, 30, VERMILLION, SUN_MASS, SUN_IMG, (40, 40))
+    sun = Planet(OD_SUN * AU, 0, SUN_RADIUS, VERMILLION, SUN_MASS, SUN_IMG, (40, 40))
     sun.sun = True
 
     # MERCURY
-    mercury = Planet(OD_MERCURY * Planet.AU, 0, 8, GREY, MERCURY_MASS, MERCURY_IMG, (20, 20))
+    mercury = Planet(OD_MERCURY * AU, 0, MERCURY_RADIUS, GREY, MERCURY_MASS, MERCURY_IMG, (20, 20))
     mercury.y_vel = -Y_VEL_MERCURY
 
     # VENUS
-    venus = Planet(OD_VENUS * Planet.AU, 0, 14, YELLOWISH_WHITE, VENUS_MASS, VENUS_ING, (20, 20))
+    venus = Planet(OD_VENUS * AU, 0, VENUS_RADIUS, YELLOWISH_WHITE, VENUS_MASS, VENUS_ING, (20, 20))
     venus.y_vel = -Y_VEL_VENUS
 
     # EARTH
-    earth = Planet(-OD_EARTH * Planet.AU, 0, 16, BLUE, EARTH_MASS, EARTH_IMG, (20, 20))
+    earth = Planet(-OD_EARTH * AU, 0, EARTH_RADIUS, BLUE, EARTH_MASS, EARTH_IMG, (20, 20))
     earth.y_vel = Y_VEL_EARTH
 
     # MARS
-    mars = Planet(-OD_MARS * Planet.AU, 0, 12, RED, MARS_MASS, MARS_IMG, (20, 20))
+    mars = Planet(-OD_MARS * AU, 0, MARS_RADIUS, RED, MARS_MASS, MARS_IMG, (20, 20))
     mars.y_vel = Y_VEL_MARS
 
     # JUPITER
-    jupiter = Planet(OD_JUPITER * Planet.AU, 0, 16, OFF_WHITE, JUPITER_MASS, JUPITER_IMG, (20, 20))
+    jupiter = Planet(OD_JUPITER * AU, 0, JUPITER_RADIUS, OFF_WHITE, JUPITER_MASS, JUPITER_IMG, (20, 20))
     jupiter.y_vel = Y_VEL_JUPITER
 
     # SATURN
-    saturn = Planet(OD_SATURN * Planet.AU, 0, 16, SIENNA, SATURN_MASS, SATURN_IMG, (20, 20))
+    saturn = Planet(OD_SATURN * AU, 0, SATURN_RADIUS, SIENNA, SATURN_MASS, SATURN_IMG, (20, 20))
     saturn.y_vel = Y_VEL_SATURN
 
     # URANUS
-    uranus = Planet(-OD_URANUS * Planet.AU, 0, 16, PEARL_BLUE, URANUS_MASS, URANUS_IMG, (20, 20))
+    uranus = Planet(-OD_URANUS * AU, 0, URANUS_RADIUS, PEARL_BLUE, URANUS_MASS, URANUS_IMG, (20, 20))
     uranus.y_vel = Y_VEL_URANUS
 
     # NEPTUNE
-    neptune = Planet(-OD_NEPTUNE * Planet.AU, 0, 16, COBALT_BLUE, NEPTUNE_MASS, NEPTUNE_IMG, (20, 20))
+    neptune = Planet(-OD_NEPTUNE * AU, 0, NEPTUNE_RADIUS, COBALT_BLUE, NEPTUNE_MASS, NEPTUNE_IMG, (20, 20))
     neptune.y_vel = Y_VEL_NEPTUNE
 
     return [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
 
+
+# add zoom buttons to the window
+def addZoomButtons(BTN_WIDTH, BTN_HEIGHT, ZOOM_IN_BTN_X, ZOOM_OUT_BTN_X, BTN_Y):
+    # for zoom in
+    zoomInText = FONT.render('+', 1, WHITE)
+    pygame.draw.rect(WIN, WHITE, [ZOOM_IN_BTN_X, BTN_Y, BTN_WIDTH, BTN_HEIGHT], 2, 0, 8, 0, 8, 0)
+    WIN.blit(zoomInText, (ZOOM_IN_BTN_X - zoomInText.get_width()/2 + BTN_WIDTH/2, BTN_Y + BTN_HEIGHT/2 - zoomInText.get_height()/2))
+
+    # for zoom out
+    zoomOutText = FONT.render('-', 1, WHITE)
+    pygame.draw.rect(WIN, WHITE, [ZOOM_OUT_BTN_X, BTN_Y, BTN_WIDTH, BTN_HEIGHT], 2, 0, 0, 8, 0, 8)
+    WIN.blit(zoomOutText, (ZOOM_OUT_BTN_X - zoomOutText.get_width()/2 + BTN_WIDTH/2, BTN_Y + BTN_HEIGHT/2 - zoomOutText.get_height()/2))
+
+
 # Main Program
 def main():
     run = True
+    
     # Frame rate of simulation
     clock = pygame.time.Clock()
 
+    # variable required to down size astronomical parameters to our window requirements
+    scale = 150 / AU
+
+    zoom = 0    # declared for keeping track of zoom scales
+
     #  list of planets in simulation
     planets = getPlanets()
+
+    # add zoom in and zoom out buttons to the window
+    BTN_WIDTH = 100
+    BTN_HEIGHT = 40
+
+    ZOOM_IN_BTN_X = WIDTH/2 - BTN_WIDTH
+    ZOOM_OUT_BTN_X = WIDTH/2
+    BTN_Y = HEIGHT - 2*BTN_HEIGHT - 10
 
     while run:
         # updates window 60 times per second
         clock.tick(60)
         WIN.fill(BLACK)
 
+        addZoomButtons(BTN_WIDTH, BTN_HEIGHT, ZOOM_IN_BTN_X, ZOOM_OUT_BTN_X, BTN_Y)
+
         # checks for events on pygame window
         for event in pygame.event.get():
             # checks if quit event is trigerred
             if event.type == pygame.QUIT:
                 run = False     # breaking condition for 'while' loop
+            
+            # checks for zoom in and zoom out of the window
+            if event.type == pygame.MOUSEWHEEL:
+                if event.y == -1:
+                    if zoom != 3:
+                        zoom += 1
+                        scale *= 2
+                else:
+                    if zoom != -3:
+                        zoom -= 1
+                        scale /= 2
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # checks if mouse co-ordinates are within the range of y co-ordinates of button (height)
+                if not (BTN_Y < mouseY) and (BTN_Y + BTN_HEIGHT > mouseY):
+                    break
+
+                # checks if mouse co-ordinates are within the range of x co-ordinates of ZOOM IN button (width)
+                if (ZOOM_IN_BTN_X < mouseX) and (ZOOM_IN_BTN_X + BTN_WIDTH > mouseX):
+                    if zoom != 3:
+                        zoom += 1
+                        scale *= 2
+                # checks if mouse co-ordinates are within the range of x co-ordinates of ZOOM OUT button (width)
+                elif (ZOOM_OUT_BTN_X < mouseX) and (ZOOM_OUT_BTN_X + BTN_WIDTH > mouseX):
+                    if zoom != -3:
+                        zoom -= 1
+                        scale /= 2
+                else:
+                    break
 
         # draws planet specified in the 'planets' list
         for planet in planets:
             planet.update_position(planets)
-            planet.draw(WIN)
+            planet.draw(WIN, scale)
+
+        mouseX, mouseY = pygame.mouse.get_pos()
 
         pygame.display.update()
 
