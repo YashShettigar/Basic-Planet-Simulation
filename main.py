@@ -266,7 +266,7 @@ def main():
             if event.type == pygame.QUIT:
                 run = False     # breaking condition for 'while' loop
             
-            # checks for zoom in and zoom out of the window
+            # checks for mousewheel event for zooming in and out on the screen
             if event.type == pygame.MOUSEWHEEL:
                 if event.y == -1:
                     if zoom != 3:
@@ -277,10 +277,11 @@ def main():
                         zoom -= 1
                         scale /= 2
             
+            # checks for mouse button press event on the zoom buttons rendered on screen
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # checks if mouse co-ordinates are within the range of y co-ordinates of button (height)
                 if not (BTN_Y < mouseY) and (BTN_Y + BTN_HEIGHT > mouseY):
-                    break
+                    pass
 
                 # checks if mouse co-ordinates are within the range of x co-ordinates of ZOOM IN button (width)
                 if (ZOOM_IN_BTN_X < mouseX) and (ZOOM_IN_BTN_X + BTN_WIDTH > mouseX):
@@ -293,7 +294,7 @@ def main():
                         zoom -= 1
                         scale /= 2
                 else:
-                    break
+                    pass
 
         # draws planet specified in the 'planets' list
         for planet in planets:
